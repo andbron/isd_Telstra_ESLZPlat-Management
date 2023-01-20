@@ -1,0 +1,11 @@
+parameters:
+  workingDirectory: $(workingDirectory)
+  environment: ''
+
+steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: 'plan_${{ parameters.environment }}'
+      downloadPath: '$(Pipeline.Workspace)/$(workingDirectory)'

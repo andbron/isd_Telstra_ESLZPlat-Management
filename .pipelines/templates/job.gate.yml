@@ -1,0 +1,26 @@
+parameters:
+  jobName: 'ManualValidation'
+  displayName: 'Wait for approval'
+  vmImage: $(vmImage)
+  poolName: server
+  timeoutInMinutes: 120
+  environment: $(environment)
+
+
+jobs:
+  - deployment: ${{ parameters.jobName }}
+    displayName: ${{ parameters.displayName }}
+    environment: ${{ parameters.environment }}
+    workspace:
+      clean: all
+    pool:
+      ${{ if ne(parameters.vmImage, '') }}:
+        vmImage: ${{ parameters.vmImage }}
+      ${{ if ne(parameters.poolName, '') }}:
+        name: ${{ parameters.poolName }}
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - template: step.approval.yml

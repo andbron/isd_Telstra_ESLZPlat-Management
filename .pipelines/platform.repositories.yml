@@ -1,0 +1,55 @@
+name: Platform Repositories
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - /.pipelines/modules.repositories.yml
+      - /deployments/repositories
+
+parameters:
+  - name: workingDirectory
+    displayName: Working Directory
+    type: string
+    default: /deployments/repositories
+
+  - name: terraformAction
+    displayName: Terraform Action
+    type: string
+    default: plan
+    values:
+      - plan
+      - apply
+      - destroy
+
+  - name: terraformVersion
+    displayName: Terraform Version
+    type: string
+    default: 1.3.1
+    values:
+      - 1.3.1
+      - latest
+
+pool:
+  vmImage: $(vmImage)
+
+variables:
+  - group: platform
+  - template: variables.yml
+  - name: workingDirectory
+    value: ${{ parameters.workingDirectory }}
+  - name: terraformVersion
+    value: ${{ parameters.terraformVersion }}
+
+stages:
+
+- stage: deploy
+  displayName: Deploy Module Repositories
+  jobs:
+    - template: templates/job.minimal.yml
+      parameters:
+        stateFileName: platform-repositories
+        terraformAction: ${{ parameters.terraformAction }}

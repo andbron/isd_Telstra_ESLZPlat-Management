@@ -1,0 +1,19 @@
+parameters:
+  artifactName: 'plan'
+  environment: ''
+
+steps:
+  - task: CopyFiles@2
+    inputs:
+      Contents: |
+        $(Pipeline.Workspace)/$(workingDirectory)/.lib/**/*
+        $(Pipeline.Workspace)/$(workingDirectory)/*
+        !$(Pipeline.Workspace)/$(workingDirectory)/.git/**/*
+        $(Pipeline.Workspace)/$(workingDirectory)//**/*.hcl        
+      SourceFolder: '$(Pipeline.Workspace)/$(workingDirectory)'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: '${{ parameters.artifactName }}_${{ parameters.environment }}'
+      publishLocation: 'Container'

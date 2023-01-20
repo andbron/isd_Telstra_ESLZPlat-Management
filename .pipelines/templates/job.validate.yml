@@ -1,0 +1,37 @@
+parameters:
+  jobName: ''
+  displayName: ''
+  vmImage: $(vmImage)
+  poolName: $(poolName)
+  timeoutInMinutes: 120
+  environment: $(environment)
+
+jobs:
+  - deployment: ${{ parameters.jobName }}
+    displayName: 'Plan ${{ parameters.displayName }}'
+    environment: ${{ parameters.environment }}
+    workspace:
+      clean: all
+    pool:
+      ${{ if ne(parameters.vmImage, '') }}:
+        vmImage: ${{ parameters.vmImage }}
+      ${{ if ne(parameters.poolName, '') }}:
+        name: ${{ parameters.poolName }}
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+              persistCredentials: true
+              path: self
+            - checkout: management
+              path: management
+            - template: step.state.yml@management
+            - template: step.init.yml@management
+              parameters:
+                backendAzureRmKey: ${{ parameters.displayName }}
+            - template: step.plan.yml@management
+            - template: step.publish.yml@management
+              parameters:
+                environment: ${{ parameters.environment }}

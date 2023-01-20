@@ -1,0 +1,6 @@
+steps:
+  - task: ManualValidation@0
+    inputs:
+      notifyUsers: |
+        [Platform]\Platform Team
+      instructions: 'Please approve to continue.'

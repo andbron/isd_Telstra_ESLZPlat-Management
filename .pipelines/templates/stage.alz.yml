@@ -1,0 +1,122 @@
+parameters:
+- name: allEnvs
+  type: object
+  default: {}
+- name: poolName
+  default: '' 
+- name: vmImage
+  default: 'ubuntu-latest'   
+- name: jobName
+  default: ''  
+- name: displayName
+  default: ''  
+- name: environment
+  default: ''  
+- name: subscriptionID
+  default: ''  
+- name: timeoutInMinutes
+  default: 120
+
+stages:
+- stage: initiation
+  displayName: initiation
+  jobs:
+  - job: clean
+    pool:
+      vmImage: ${{ parameters.vmImage }}
+    workspace:
+      clean: all
+    steps:
+    - checkout: self
+      persistCredentials: true
+      path: self
+    - checkout: management
+      path: management       
+    - template: step.initiation.yml@management
+
+- ${{ each env in parameters.allEnvs.environments }}:
+  - ${{ if not(eq(env.jobName,'')) }}:
+    - stage: validate_${{ replace(env.jobName, '-', '_') }}_${{ replace(env.subscriptionID, '-', '_') }}
+      displayName: Validate ${{ env.displayName }}
+      dependsOn: initiation
+      jobs:
+        - job: ${{ replace(env.jobName, '-', '_') }}
+          displayName: 'Plan ${{ env.displayName }}'
+          workspace:
+            clean: all
+          pool:
+            ${{ if ne(parameters.vmImage, '') }}:
+              vmImage: ${{ parameters.vmImage }}
+            ${{ if ne(env.poolName, '') }}:
+              name: ${{ env.poolName }}
+          steps:
+            - checkout: self
+              persistCredentials: true
+              path: self
+            - checkout: management
+              path: management
+            - template: step.state.yml@management
+            - template: step.init.yml@management
+              parameters:
+                backendAzureRmKey: '${{ env.displayName }} (${{ env.subscriptionID }})'
+                subscriptionID: ${{ env.subscriptionID }}
+            - template: step.plan.yml@management
+              parameters:
+                subscriptionID: ${{ env.subscriptionID }}
+            - template: step.publish.yml@management
+              parameters:
+                environment: ${{ env.environment }}
+
+- stage: converge
+  displayName: Process Plan Results
+  pool:
+    vmImage: ${{ parameters.vmImage }}
+  dependsOn:
+  - ${{ each env in parameters.allEnvs.environments }}:
+    - ${{ if not(eq(env.jobName,'')) }}:
+      - validate_${{ replace(env.jobName, '-', '_') }}_${{ replace(env.subscriptionID, '-', '_') }}
+  jobs:
+  - job: converge
+    steps:
+    - task: PowerShell@2
+      name: plan_results
+      displayName: Process Plan Results
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)  
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "This is a place holder to build out the plan results capability"
+
+- ${{ each env in parameters.allEnvs.environments }}:
+  - ${{ if not(eq(env.jobName,'')) }}:
+    - stage: apply_${{ replace(env.jobName, '-', '_') }}_${{ replace(env.subscriptionID, '-', '_') }} 
+      displayName: Apply ${{ env.jobName }}
+      condition: and(not(failed()),not(canceled()),in(variables['Build.Reason'],'Manual','IndividualCI'),eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      jobs:
+        - deployment: ${{ replace(env.jobName, '-', '_') }}
+          displayName: 'Apply ${{ env.displayName }}'
+          environment: ${{ env.environment }}
+          workspace:
+            clean: all
+          pool:
+            ${{ if ne(parameters.vmImage, '') }}:
+              vmImage: ${{ parameters.vmImage }}
+            ${{ if ne(env.poolName, '') }}:
+              name: ${{ env.poolName }}
+          timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+          strategy:
+            runOnce:
+              deploy:
+                steps:
+                  - template: step.download.yml@management
+                    parameters:
+                      environment: ${{ env.environment }}
+                  - template: step.init.yml@management
+                    parameters:
+                      downloadDirectory: plan_${{ env.environment }}
+                      subscriptionID: ${{ env.subscriptionID }}
+                  - template: step.apply.yml@management
+                    parameters:
+                      subscriptionID: ${{ env.subscriptionID }}
+                      environment: ${{ env.environment }}

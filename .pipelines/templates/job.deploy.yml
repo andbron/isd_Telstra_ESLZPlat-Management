@@ -1,0 +1,35 @@
+parameters:
+  jobName: ''
+  displayName: ''
+  vmImage: $(vmImage)
+  poolName: $(poolName)
+  timeoutInMinutes: 120
+  environment: $(environment)
+
+  moduleName: '$(workingDirectory)'
+
+jobs:
+  - deployment: ${{ parameters.jobName }}
+    displayName: 'Apply ${{ parameters.displayName }}'
+    environment: ${{ parameters.environment }}
+    workspace:
+      clean: all
+    pool:
+      ${{ if ne(parameters.vmImage, '') }}:
+        vmImage: ${{ parameters.vmImage }}
+      ${{ if ne(parameters.poolName, '') }}:
+        name: ${{ parameters.poolName }}
+    timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - template: step.download.yml
+              parameters:
+                environment: ${{ parameters.environment }}
+            - template: step.init.yml
+              parameters:
+                downloadDirectory: plan_${{ parameters.environment }}
+            - template: step.apply.yml
+              parameters:
+                environment: ${{ parameters.environment }}

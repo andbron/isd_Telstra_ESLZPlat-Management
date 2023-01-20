@@ -1,0 +1,35 @@
+parameters:
+  serviceConnection: $(serviceconnection)
+  subscriptionID: $(subscriptionID)
+  workingDirectory: $(workingDirectory)
+
+  backendType: $(backendType)
+  backendAzureRmSubscriptionID: $(TFStateSubscriptionID)
+  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
+  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
+  backendAzureRmContainerName: $(TFStateContainer)
+
+steps:
+  - task: Bash@3
+    displayName: 'terraform plan'
+    enabled: true
+    inputs:
+      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)'
+      targetType: 'inline'
+      failOnStderr: true
+      script: |
+        az login --identity
+        echo $ARM_SUBSCRIPTION_ID
+        terraform plan -out=terraform.plan -detailed-exitcode
+        echo $?
+    env:
+      TF_IN_AUTOMATION: true
+      TF_LOG: # INFO
+      ARM_USE_MSI: true
+      ARM_SUBSCRIPTION_ID: ${{ parameters.subscriptionID }}
+      ARM_TENANT_ID: $(tenantID)
+      AZDO_PERSONAL_ACCESS_TOKEN: $(System.AccessToken)
+      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
+      HTTP_PROXY: $(proxy)
+      HTTPS_PROXY: $(proxy)
+      NO_PROXY: $(no_proxy)

@@ -1,0 +1,23 @@
+parameters:
+  serviceConnection: $(serviceconnection)
+  workingDirectory: $(workingDirectory)
+
+  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
+  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
+  backendAzureRmContainerName: $(TFStateContainer)
+  backendAzureRmKey: '$(workingDirectory).tfstate'
+  location: $(location)
+
+steps:
+  - task: Bash@3
+    displayName: 'Create/Verify Storage Account'
+    enabled: false
+    inputs:
+      targetType: 'inline'
+      failOnStderr: false
+      script: |
+        az login --identity
+        az account set --subscription "$(TFStateSubscriptionID)"
+        # az group create --name ${{ parameters.backendAzureRmResourceGroupName }} --location ${{ parameters.location }}
+        # az storage account create --resource-group ${{ parameters.backendAzureRmResourceGroupName }} --name ${{ parameters.backendAzureRmStorageAccountName }} --sku Standard_LRS --encryption-services blob
+        az storage container create --name ${{ parameters.backendAzureRmContainerName }} --account-name ${{ parameters.backendAzureRmStorageAccountName }} --auth-mode login

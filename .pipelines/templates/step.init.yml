@@ -1,0 +1,79 @@
+parameters:
+  serviceConnection: $(serviceconnection)
+  subscriptionID: $(subscriptionID)
+  downloadDirectory: ''
+
+  backendType: $(backendType)
+  backendAzureRmSubscriptionID: $(TFStateSubscriptionID)
+  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
+  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
+  backendAzureRmContainerName: $(TFStateContainer)
+  backendAzureRmKey: ''
+
+steps:
+  - task: PowerShell@2
+    displayName: 'Show environment variables'
+    enabled: false
+    inputs:
+      workingDirectory: '$(Pipeline.Workspace)'
+      targetType: 'inline'
+      script: |
+        dir env:
+    env:
+      TF_IN_AUTOMATION: true
+      TF_LOG: # INFO
+      ARM_USE_MSI: true
+      ARM_SUBSCRIPTION_ID: ${{ parameters.subscriptionID }}
+      ARM_TENANT_ID: $(subscriptionID)
+      AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
+      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL) # $(SYSTEM_COLLECTIONURI)
+      HTTP_PROXY: $(proxy)
+      HTTPS_PROXY: $(proxy)
+      NO_PROXY: $(no_proxy)
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  - task: PowerShell@2
+    displayName: 'Create backend.tf'
+    enabled: true
+    inputs:
+      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)'
+      targetType: 'inline'
+      script: |
+        $content = '
+        terraform {
+            backend "${{ parameters.backendType }}" {
+                subscription_id = "${{ parameters.backendAzureRmSubscriptionID }}"
+                resource_group_name = "${{ parameters.backendAzureRmResourceGroupName }}"
+                storage_account_name = "${{ parameters.backendAzureRmStorageAccountName }}"
+                container_name = "${{ parameters.backendAzureRmContainerName }}"
+                key = "${{ parameters.backendAzureRmKey }}.tfstate"
+            }
+        }' | Out-File backend.tf -Force
+        Get-Content backend.tf
+
+  - task: PowerShell@2
+    displayName: 'terraform init'
+    enabled: true
+    inputs:
+      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)/${{ parameters.downloadDirectory }}'
+      targetType: 'inline'
+      script: |
+        az login --identity
+        az account set -s $(TFStateSubscriptionID)
+        echo $env:ARM_SUBSCRIPTION_ID
+        git config --global http.https://9025-CICD@dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
+        terraform init
+        echo 'Reset ~/.gitconfig'
+        rm -rf ~/.gitconfig
+    env:
+      TF_IN_AUTOMATION: true
+      TF_LOG: # INFO
+      ARM_USE_MSI: true
+      ARM_SUBSCRIPTION_ID: ${{ parameters.subscriptionID }}
+      ARM_TENANT_ID: $(tenantID)
+      AZDO_PERSONAL_ACCESS_TOKEN: $(System.AccessToken)
+      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL) # $(SYSTEM_COLLECTIONURI)
+      HTTP_PROXY: $(proxy)
+      HTTPS_PROXY: $(proxy)
+      NO_PROXY: $(no_proxy)
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

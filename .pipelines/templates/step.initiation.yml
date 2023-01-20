@@ -1,0 +1,14 @@
+parameters:
+- name: powershellCore
+  displayName: "Run on Powershell Core"
+  type: boolean
+  default: true
+
+steps:
+  - task: PowerShell@2
+    displayName: "List Environment Variables"
+    inputs:
+      targetType: "inline"
+      pwsh: ${{parameters.powershellCore}}
+      script: |
+        get-childitem env:
