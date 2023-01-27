@@ -1,11 +1,12 @@
 parameters:
-  serviceConnection: $(serviceconnection)
-  workingDirectory: $(workingDirectory)
+  # serviceConnection: $(serviceconnection)
+  # workingDirectory: $(workingDirectory)
 
-  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
-  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
-  backendAzureRmContainerName: $(TFStateContainer)
-  backendAzureRmKey: '$(workingDirectory).tfstate'
+  TFStateSubscriptionID: ''
+  TFStateResourceGroup: ''
+  TFStateStorageAccount: ''
+  TFStateContainerName: $(TFStateContainer)
+  # backendAzureRmKey: '$(workingDirectory).tfstate'
   location: $(location)
 
 steps:
@@ -17,7 +18,7 @@ steps:
       failOnStderr: false
       script: |
         az login --identity
-        az account set --subscription "$(TFStateSubscriptionID)"
-        # az group create --name ${{ parameters.backendAzureRmResourceGroupName }} --location ${{ parameters.location }}
-        # az storage account create --resource-group ${{ parameters.backendAzureRmResourceGroupName }} --name ${{ parameters.backendAzureRmStorageAccountName }} --sku Standard_LRS --encryption-services blob
-        az storage container create --name ${{ parameters.backendAzureRmContainerName }} --account-name ${{ parameters.backendAzureRmStorageAccountName }} --auth-mode login
+        az account set --subscription "${{ parameters.TFStateSubscriptionID }}"
+        # az group create --name ${{ parameters.TFStateResourceGroup }} --location ${{ parameters.location }}
+        # az storage account create --resource-group ${{ parameters.TFStateResourceGroup }} --name ${{ parameters.TFStateStorageAccount }} --sku Standard_LRS --encryption-services blob
+        az storage container create --name ${{ parameters.TFStateContainerName }} --account-name ${{ parameters.TFStateStorageAccount }} --auth-mode login

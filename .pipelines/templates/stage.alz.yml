@@ -14,6 +14,12 @@ parameters:
   default: ''  
 - name: subscriptionID
   default: ''  
+- name: TFStateSubscriptionID
+  default: ''  
+- name: TFStateResourceGroup
+  default: ''  
+- name: TFStateStorageAccount
+  default: ''        
 - name: timeoutInMinutes
   default: 120
 
@@ -56,13 +62,22 @@ stages:
             - checkout: management
               path: management
             - template: step.state.yml@management
+              parameters:
+                TFStateSubscriptionID: ${{ env.TFStateSubscriptionID }}
+                TFStateResourceGroup: ${{ env.TFStateResourceGroup }}
+                TFStateStorageAccount: ${{ env.TFStateStorageAccount }}
             - template: step.init.yml@management
               parameters:
                 backendAzureRmKey: '${{ env.displayName }} (${{ env.subscriptionID }})'
                 subscriptionID: ${{ env.subscriptionID }}
+                TFStateSubscriptionID: ${{ env.TFStateSubscriptionID }}
+                TFStateResourceGroup: ${{ env.TFStateResourceGroup }}
+                TFStateStorageAccount: ${{ env.TFStateStorageAccount }}
             - template: step.plan.yml@management
               parameters:
                 subscriptionID: ${{ env.subscriptionID }}
+                envInputs: alz_inputs_${{ env.environment }}.json
+                nsgRules: nsg_rules_${{ env.environment }}.csv
             - template: step.publish.yml@management
               parameters:
                 environment: ${{ env.environment }}
@@ -114,8 +129,12 @@ stages:
                       environment: ${{ env.environment }}
                   - template: step.init.yml@management
                     parameters:
-                      downloadDirectory: plan_${{ env.environment }}
+                      workingDirectory: $(Pipeline.Workspace)/$(workingDirectory)/plan_${{ env.environment }}
+                      backendAzureRmKey: '${{ env.displayName }} (${{ env.subscriptionID }})'
                       subscriptionID: ${{ env.subscriptionID }}
+                      TFStateSubscriptionID: ${{ env.TFStateSubscriptionID }}
+                      TFStateResourceGroup: ${{ env.TFStateResourceGroup }}
+                      TFStateStorageAccount: ${{ env.TFStateStorageAccount }}
                   - template: step.apply.yml@management
                     parameters:
                       subscriptionID: ${{ env.subscriptionID }}

@@ -5,8 +5,10 @@ parameters:
   poolName: $(poolName)
   timeoutInMinutes: 120
   environment: $(environment)
-
   moduleName: '$(workingDirectory)'
+  TFStateSubscriptionID: ''
+  TFStateResourceGroup: ''
+  TFStateStorageAccount: ''  
 
 jobs:
   - deployment: ${{ parameters.jobName }}
@@ -29,7 +31,11 @@ jobs:
                 environment: ${{ parameters.environment }}
             - template: step.init.yml
               parameters:
-                downloadDirectory: plan_${{ parameters.environment }}
+                workingDirectory: $(Pipeline.Workspace)/$(workingDirectory)/plan_${{ parameters.environment }}
+                backendAzureRmKey: ${{ parameters.displayName }}
+                TFStateSubscriptionID: ${{ parameters.TFStateSubscriptionID }}
+                TFStateResourceGroup: ${{ parameters.TFStateResourceGroup }}
+                TFStateStorageAccount: ${{ parameters.TFStateStorageAccount }}
             - template: step.apply.yml
               parameters:
                 environment: ${{ parameters.environment }}

@@ -5,6 +5,9 @@ parameters:
   poolName: $(poolName)
   timeoutInMinutes: 120
   environment: $(environment)
+  TFStateSubscriptionID: ''
+  TFStateResourceGroup: ''
+  TFStateStorageAccount: ''   
 
 jobs:
   - deployment: ${{ parameters.jobName }}
@@ -28,9 +31,16 @@ jobs:
             - checkout: management
               path: management
             - template: step.state.yml@management
+              parameters:
+                TFStateSubscriptionID: ${{ parameters.TFStateSubscriptionID }}
+                TFStateResourceGroup: ${{ parameters.TFStateResourceGroup }}
+                TFStateStorageAccount: ${{ parameters.TFStateStorageAccount }}
             - template: step.init.yml@management
               parameters:
                 backendAzureRmKey: ${{ parameters.displayName }}
+                TFStateSubscriptionID: ${{ parameters.TFStateSubscriptionID }}
+                TFStateResourceGroup: ${{ parameters.TFStateResourceGroup }}
+                TFStateStorageAccount: ${{ parameters.TFStateStorageAccount }}
             - template: step.plan.yml@management
             - template: step.publish.yml@management
               parameters:

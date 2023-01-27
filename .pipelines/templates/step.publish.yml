@@ -8,6 +8,7 @@ steps:
       Contents: |
         $(Pipeline.Workspace)/$(workingDirectory)/.lib/**/*
         $(Pipeline.Workspace)/$(workingDirectory)/*
+        $(Pipeline.Workspace)/$(workingDirectory)/config/*
         !$(Pipeline.Workspace)/$(workingDirectory)/.git/**/*
         $(Pipeline.Workspace)/$(workingDirectory)//**/*.hcl        
       SourceFolder: '$(Pipeline.Workspace)/$(workingDirectory)'

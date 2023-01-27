@@ -1,26 +1,22 @@
 parameters:
   serviceConnection: $(serviceconnection)
   subscriptionID: $(subscriptionID)
-  workingDirectory: $(workingDirectory)
-
-  backendType: $(backendType)
-  backendAzureRmSubscriptionID: $(TFStateSubscriptionID)
-  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
-  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
-  backendAzureRmContainerName: $(TFStateContainer)
+  workingDirectory: $(Pipeline.Workspace)/$(workingDirectory)
+  envInputs: ''
+  nsgRules: ''
 
 steps:
   - task: Bash@3
     displayName: 'terraform plan'
     enabled: true
     inputs:
-      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)'
+      workingDirectory: '${{ parameters.workingDirectory }}'
       targetType: 'inline'
       failOnStderr: true
       script: |
         az login --identity
         echo $ARM_SUBSCRIPTION_ID
-        terraform plan -out=terraform.plan -detailed-exitcode
+        terraform plan -var env_specific_config=${{ parameters.envInputs }} -var env_specific_nsg_rules=${{ parameters.nsgRules }} -out=terraform.plan -detailed-exitcode
         echo $?
     env:
       TF_IN_AUTOMATION: true

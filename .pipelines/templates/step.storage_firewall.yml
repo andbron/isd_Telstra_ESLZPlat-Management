@@ -1,0 +1,23 @@
+parameters:
+  subscriptionID: ''
+  environment: ''
+
+steps:
+  - task: PowerShell@2
+    name: "storage_account_firewall_update"
+    displayName: 'Create Storage Account Firewall Update'
+    inputs:
+      pwsh: true
+      targetType: 'inline'
+      script: |
+        az login --identity
+        az account set --subscription "${{ parameters.subscriptionID }}"
+        $subscriptionName = (az account show | ConvertFrom-Json).name
+        $segment = @($subscriptionName.Split('-'))
+        #$storageAccountName = "tcg" + $segment[1] + $segment[2].Split('alz')[-1] + "sa001"
+        #$storageAccountRGName = "tcg-" + $segment[1] + "-" + $segment[2].Split('alz')[-1] + "-management-rg001"
+        $storageAccountName = "tcgnpaealzsa001"
+        $storageAccountRGName = "tcg-npae-alz-management-rg001"
+        Import-Module $(Pipeline.Workspace)/management/.pipelines/scripts/Set-StorageFirewallExclusion.ps1
+        Set-StorageFirewallExclusion -storageaccount $storageAccountName -resourcegroup $storageAccountRGName -mode on
+

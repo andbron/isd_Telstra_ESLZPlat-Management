@@ -12,3 +12,5 @@ steps:
       pwsh: ${{parameters.powershellCore}}
       script: |
         get-childitem env:
+        ls -alR $(Pipeline.Workspace)/self/ 
+        ls -alR $(Pipeline.Workspace)/management/

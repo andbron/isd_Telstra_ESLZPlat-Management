@@ -1,13 +1,13 @@
 parameters:
   serviceConnection: $(serviceconnection)
   subscriptionID: $(subscriptionID)
-  downloadDirectory: ''
+  workingDirectory: $(Pipeline.Workspace)/$(workingDirectory)
 
   backendType: $(backendType)
-  backendAzureRmSubscriptionID: $(TFStateSubscriptionID)
-  backendAzureRmResourceGroupName: $(TFStateResourceGroup)
-  backendAzureRmStorageAccountName: $(TFStateStorageAccount)
-  backendAzureRmContainerName: $(TFStateContainer)
+  TFStateSubscriptionID: ''
+  TFStateResourceGroup: ''
+  TFStateStorageAccount: ''
+  TFStateContainerName: $(TFStateContainer)
   backendAzureRmKey: ''
 
 steps:
@@ -26,7 +26,7 @@ steps:
       ARM_SUBSCRIPTION_ID: ${{ parameters.subscriptionID }}
       ARM_TENANT_ID: $(subscriptionID)
       AZDO_PERSONAL_ACCESS_TOKEN: $(AZDO_PERSONAL_ACCESS_TOKEN)
-      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL) # $(SYSTEM_COLLECTIONURI)
+      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
       HTTP_PROXY: $(proxy)
       HTTPS_PROXY: $(proxy)
       NO_PROXY: $(no_proxy)
@@ -36,16 +36,16 @@ steps:
     displayName: 'Create backend.tf'
     enabled: true
     inputs:
-      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)'
+      workingDirectory: '${{ parameters.workingDirectory }}'
       targetType: 'inline'
       script: |
         $content = '
         terraform {
             backend "${{ parameters.backendType }}" {
-                subscription_id = "${{ parameters.backendAzureRmSubscriptionID }}"
-                resource_group_name = "${{ parameters.backendAzureRmResourceGroupName }}"
-                storage_account_name = "${{ parameters.backendAzureRmStorageAccountName }}"
-                container_name = "${{ parameters.backendAzureRmContainerName }}"
+                subscription_id = "${{ parameters.TFStateSubscriptionID }}"
+                resource_group_name = "${{ parameters.TFStateResourceGroup }}"
+                storage_account_name = "${{ parameters.TFStateStorageAccount }}"
+                container_name = "${{ parameters.TFStateContainerName }}"
                 key = "${{ parameters.backendAzureRmKey }}.tfstate"
             }
         }' | Out-File backend.tf -Force
@@ -55,16 +55,17 @@ steps:
     displayName: 'terraform init'
     enabled: true
     inputs:
-      workingDirectory: '$(Pipeline.Workspace)/$(workingDirectory)/${{ parameters.downloadDirectory }}'
+      workingDirectory: '${{ parameters.workingDirectory }}'
       targetType: 'inline'
       script: |
         az login --identity
-        az account set -s $(TFStateSubscriptionID)
+        az account set -s ${{ parameters.TFStateSubscriptionID }}
         echo $env:ARM_SUBSCRIPTION_ID
-        git config --global http.https://9025-CICD@dev.azure.com.extraheader "AUTHORIZATION: bearer $(System.AccessToken)"
+        
+        #Set up Git credential helper so that terraform files can download modules without needing auth tokens
+        $ENV:GIT_PAT = $ENV:SYSTEM_ACCESSTOKEN
+        git config --global credential.helper "!f() { sleep 1; echo `"username=$($ENV:GIT_PAT)`"; echo `"password=$($ENV:GIT_PAT)`"; }; f"
         terraform init
-        echo 'Reset ~/.gitconfig'
-        rm -rf ~/.gitconfig
     env:
       TF_IN_AUTOMATION: true
       TF_LOG: # INFO
@@ -72,7 +73,7 @@ steps:
       ARM_SUBSCRIPTION_ID: ${{ parameters.subscriptionID }}
       ARM_TENANT_ID: $(tenantID)
       AZDO_PERSONAL_ACCESS_TOKEN: $(System.AccessToken)
-      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL) # $(SYSTEM_COLLECTIONURI)
+      AZDO_ORG_SERVICE_URL: $(AZDO_ORG_SERVICE_URL)
       HTTP_PROXY: $(proxy)
       HTTPS_PROXY: $(proxy)
       NO_PROXY: $(no_proxy)
