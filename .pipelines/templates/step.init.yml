@@ -4,9 +4,9 @@ parameters:
   workingDirectory: $(Pipeline.Workspace)/$(workingDirectory)
 
   backendType: $(backendType)
-  TFStateSubscriptionID: ''
-  TFStateResourceGroup: ''
-  TFStateStorageAccount: ''
+  TFStateSubscriptionID: $(TFStateSubscriptionID)
+  TFStateResourceGroup: $(TFStateResourceGroup)
+  TFStateStorageAccount: $(TFStateStorageAccount) 
   TFStateContainerName: $(TFStateContainer)
   backendAzureRmKey: ''
 

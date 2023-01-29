@@ -2,9 +2,9 @@ parameters:
   # serviceConnection: $(serviceconnection)
   # workingDirectory: $(workingDirectory)
 
-  TFStateSubscriptionID: ''
-  TFStateResourceGroup: ''
-  TFStateStorageAccount: ''
+  TFStateSubscriptionID: $(TFStateSubscriptionID)
+  TFStateResourceGroup: $(TFStateResourceGroup)
+  TFStateStorageAccount: $(TFStateStorageAccount) 
   TFStateContainerName: $(TFStateContainer)
   # backendAzureRmKey: '$(workingDirectory).tfstate'
   location: $(location)

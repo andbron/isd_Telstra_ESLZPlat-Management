@@ -5,9 +5,9 @@ parameters:
   poolName: $(poolName)
   timeoutInMinutes: 120
   environment: $(environment)
-  TFStateSubscriptionID: ''
-  TFStateResourceGroup: ''
-  TFStateStorageAccount: ''   
+  TFStateSubscriptionID: $(TFStateSubscriptionID)
+  TFStateResourceGroup: $(TFStateResourceGroup)
+  TFStateStorageAccount: $(TFStateStorageAccount)   
 
 jobs:
   - deployment: ${{ parameters.jobName }}
